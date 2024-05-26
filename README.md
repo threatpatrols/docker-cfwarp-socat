@@ -1,7 +1,8 @@
-# SOCAT through Cloudflare WARP on Docker
+# Multi-socat in Cloudflare WARP on Docker
+
+Creates multiple socat pipes based on env-var names that start with 'CLOUDFLAREWARP_SOCAT'
+within a Cloudflare WARP connected session.
 
 ## Usage
-
-### Start the container
 
 Docs pending...

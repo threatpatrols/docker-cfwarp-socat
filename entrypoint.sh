@@ -66,7 +66,7 @@ while IFS= read -r socat_args || [[ -n $socat_args ]]; do
     echo " >> ${socat_cmd}"
     $(${socat_cmd}) &
   fi
-done < <(printf '%s' "$(env | grep CLOUDFLAREWARP_SOCAT | cut -d'=' -f2-)")
+done < <(printf '%s' "$(env | grep ^CLOUDFLAREWARP_SOCAT | cut -d'=' -f2-)")
 printf "\n"
 
 # Output networking details after a delay that waits for CloudflareWARP to become stable
