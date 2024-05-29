@@ -27,7 +27,8 @@ RUN \
     warp-cli --version && \
     \
     apt-get clean && \
-    apt-get autoremove -y
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 
 COPY entrypoint.sh /entrypoint.sh

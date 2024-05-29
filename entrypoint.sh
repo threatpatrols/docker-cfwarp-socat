@@ -63,8 +63,9 @@ printf "\n========\n"
 while IFS= read -r socat_args || [[ -n $socat_args ]]; do
   if [ -n "${socat_args}" ]; then
     socat_cmd="socat ${socat_args}"
-    echo " >> ${socat_cmd}"
-    $(${socat_cmd}) &
+    echo "SOCAT_COMMAND: >> ${socat_cmd}"
+    bash -c "${socat_cmd}" &
+    echo "==="
   fi
 done < <(printf '%s' "$(env | sort | grep ^CLOUDFLAREWARP_SOCAT | cut -d'=' -f2-)")
 printf "\n"
