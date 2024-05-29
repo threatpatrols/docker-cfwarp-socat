@@ -5,4 +5,15 @@ within a Cloudflare WARP connected session.
 
 ## Usage
 
-Docs pending...
+Better docs someday...
+
+Env-vars with prefix `CLOUDFLAREWARP_SOCAT` are sorted and used as `socat` command line inputs.
+
+```yaml
+services:
+  my-cfwarp-socat:
+    image: "threatpatrols/cfwarp-socat"
+    environment:
+      CLOUDFLAREWARP_SOCAT_02: "TCP4-LISTEN:2222,reuseaddr,fork TCP4:127.0.0.1:22"
+      CLOUDFLAREWARP_SOCAT_01: "UNIX-LISTEN:/run/docker.sock,reuseaddr,fork TCP4:127.0.0.1:80"
+```

@@ -6,7 +6,7 @@ set -e
 
 # Set some env var defaults
 # ===
-CLOUDFLAREWARP_INFO_DELAY="${CLOUDFLAREWARP_INFO_DELAY:-90}"
+CLOUDFLAREWARP_INFO_DELAY="${CLOUDFLAREWARP_INFO_DELAY:-85}"
 CLOUDFLAREWARP_DATA_MOUNT="${CLOUDFLAREWARP_DATA_MOUNT:-/var/lib/cloudflare-warp/data}"
 
 # Create a tun device for CloudflareWARP to work with
@@ -27,7 +27,7 @@ echo " >> reg.json mount: ${CLOUDFLAREWARP_DATA_MOUNT}/reg.json"
 mkdir -p "${CLOUDFLAREWARP_DATA_MOUNT}"
 touch "${CLOUDFLAREWARP_DATA_MOUNT}/reg.json"
 cp "${CLOUDFLAREWARP_DATA_MOUNT}/reg.json" /var/lib/cloudflare-warp/reg.json
-printf " >> reg.json head : "
+printf " >> reg.json (head) : "
 head -c64 /var/lib/cloudflare-warp/reg.json
 printf "\n"
 
@@ -66,7 +66,7 @@ while IFS= read -r socat_args || [[ -n $socat_args ]]; do
     echo " >> ${socat_cmd}"
     $(${socat_cmd}) &
   fi
-done < <(printf '%s' "$(env | grep ^CLOUDFLAREWARP_SOCAT | cut -d'=' -f2-)")
+done < <(printf '%s' "$(env | sort | grep ^CLOUDFLAREWARP_SOCAT | cut -d'=' -f2-)")
 printf "\n"
 
 # Output networking details after a delay that waits for CloudflareWARP to become stable
