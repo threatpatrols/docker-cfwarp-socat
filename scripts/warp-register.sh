@@ -2,12 +2,10 @@
 
 set -e
 
-# setup an isolated cloudflare reg.json file that is required to make sure cloudflare warp does not
-# break when previous var-data exists in /var/lib/cloudflare-warp
-mkdir -p "${WARP_REGDATA_MOUNT}"
-touch "${WARP_REGDATA_MOUNT}/reg.json"
-cp "${WARP_REGDATA_MOUNT}/reg.json" /var/lib/cloudflare-warp/reg.json
-printf " >> [warp-register] reg.json (head-64b): %s\n" "$(head -c64 /var/lib/cloudflare-warp/reg.json)"
+# peek at cloudflare-warp/reg.json
+if [ -f "/var/lib/cloudflare-warp/reg.json" ]; then
+  printf " >> [warp-register] cloudflare-warp/reg.json 64 bytes > %s\n" "$(head -c64 /var/lib/cloudflare-warp/reg.json)"
+fi
 
 # create an appropriate cloudflare-warp/mdm.xml if the data for it exists
 if [ -n "${WARP_ORGANIZATION}" ]; then
@@ -31,19 +29,23 @@ EOF
 fi
 
 if [ -f "/var/lib/cloudflare-warp/mdm.xml" ]; then
-  echo " >> [warp-register] cloudflare-warp/mdm.xml file present"
-  ls -al "/var/lib/cloudflare-warp/mdm.xml"
+  printf " >> [warp-register] cloudflare-warp/mdm.xml file present > %s\n" "$(ls -al /var/lib/cloudflare-warp/mdm.xml)"
 fi
 
-# if /var/lib/cloudflare-warp/reg.json not exists, register the warp client
-if [ "$(wc -c /var/lib/cloudflare-warp/reg.json | cut -d' ' -f1)" -eq 0 ]; then
-    echo " >> [warp-register] registering new Warp client"
-    rm -f /var/lib/cloudflare-warp/reg.json
-    warp-cli registration new
+if [ "$(warp-cli registration show 2>&1 | grep -c -i 'error')" -gt 0 ]; then
+  echo " >> [warp-register] registering Warp client"
+  sudo rm -f /var/lib/cloudflare-warp/reg.json
+  warp-cli registration new
 
   # if license key is provided, set it
   if [ -n "$WARP_LICENSE_KEY" ]; then
-      echo " >> [warp-register] setting Warp license"
+      echo " >> [warp-register] adding Warp license to registration"
       warp-cli set-license "$WARP_LICENSE_KEY"
   fi
+
+  sleep "${WARP_START_DELAY}"
 fi
+
+# Show the warp registration detail
+echo " >> [warp-connect] show the Warp registration details."
+warp-cli registration show || true

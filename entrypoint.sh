@@ -9,12 +9,11 @@ if [ -n "${DEBUG}" ]; then
   set -x
 fi
 
+/scripts/warp-system-status.sh "${WARP_SYSTEM_STATUS_DELAY}" &  # display system status after a delay
 /scripts/warp-connect.sh
-/scripts/warp-system-status.sh 60 &  # display system status after a delay
 /scripts/socat-start.sh
 
 while true; do
-  cp /var/lib/cloudflare-warp/reg.json "${WARP_REGDATA_MOUNT}/reg.json"
 
   if [ $(pgrep --exact --count warp-svc) -lt 1 ]; then
     echo " >> [entrypoint] warp-svc process not running, exiting now."

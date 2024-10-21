@@ -4,7 +4,7 @@ set -e
 
 # Start
 # =============================================================================
-printf "cfwarp-socat: %s\n" "$(date -u -Iseconds)"
+printf "cfwarp-socat: %s\n\n" "$(date -u -Iseconds)"
 
 
 # SOCAT_
@@ -18,7 +18,8 @@ while IFS= read -r _socat_env || [[ -n $_socat_env ]]; do
 done < <(printf '%s' "$(env | grep ^CLOUDFLAREWARP_SOCAT)")  # handle legacy SOCAT_ env var names
 
 # Output SOCAT_ configs
-env | grep -v -i "secret" | grep "^SOCAT_" || true
+env | grep -v -i -E "secret|key|token" | grep "^SOCAT_" || true
+env | grep -i -E "secret|key|token" | grep "^SOCAT_" | cut -d'=' -f1 | tr '\n' '~' | sed -r 's/~/=\[redacted\]~/g' | tr '~' '\n'
 
 
 # Global
@@ -26,7 +27,7 @@ env | grep -v -i "secret" | grep "^SOCAT_" || true
 export DEBUG=${DEBUG:=}
 
 # Output DEBUG configs
-env | grep -v -i "secret" | grep "^DEBUG"
+env | grep "^DEBUG"
 
 
 # Cloudflare Warp
@@ -35,13 +36,8 @@ export WARP_START_DELAY=${WARP_START_DELAY:=5}
 export WARP_CONNECT_RETRY_MAX=${WARP_CONNECT_RETRY_MAX:=20}
 export WARP_CONNECT_RETRY_SLEEP=${WARP_CONNECT_RETRY_SLEEP:=5}
 export WARP_LICENSE_KEY=${WARP_LICENSE_KEY:=}
-# export WARP_EXCLUDE_LOCALNETS=${WARP_EXCLUDE_LOCALNETS:=}
-
-if [ -n "${CLOUDFLAREWARP_DATA_MOUNT}" ]; then
-  export WARP_REGDATA_MOUNT=${CLOUDFLAREWARP_DATA_MOUNT}  # support for legacy WARP_REGDATA_MOUNT variable name
-else
-  export WARP_REGDATA_MOUNT=${WARP_REGDATA_MOUNT:=/var/lib/cloudflare-warp/regdata}
-fi
+export WARP_HEALTHCHECK_PING=${WARP_HEALTHCHECK_PING:=1.1.1.1}
+export WARP_SYSTEM_STATUS_DELAY=${WARP_SYSTEM_STATUS_DELAY:=90}
 
 if [ -n "${CLOUDFLAREWARP_ORGANIZATION}" ]; then
   export WARP_ORGANIZATION=${CLOUDFLAREWARP_ORGANIZATION}  # support for legacy WARP_ORGANIZATION variable name
@@ -69,7 +65,8 @@ fi
 
 
 # Output WARP_ configs
-env | grep -v -i "secret" | grep "^WARP_"
+env | grep -v -i -E "secret|key|token" | grep "^WARP_" || true
+env | grep -i -E "secret|key|token" | grep "^WARP_" | cut -d'=' -f1 | tr '\n' '~' | sed -r 's/~/=\[redacted\]~/g' | tr '~' '\n'
 
 
 # End
