@@ -1,4 +1,25 @@
 
+# Cloudflare WARP
+FROM debian:stable-slim AS cloudflare-warp
+
+# download the cloudflare-warp deb package
+RUN \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y curl ca-certificates gnupg lsb-release && \
+    \
+    curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list && \
+    \
+    mkdir -p /tmp/cloudflare-warp && cd /tmp/cloudflare-warp && \
+    \
+    apt-get update && \
+    apt show cloudflare-warp && \
+    apt-get download --print-uris cloudflare-warp && \
+    apt-get download cloudflare-warp || true && \
+    mv cloudflare-warp_*.deb cloudflare-warp.deb
+
+
 # https://hub.docker.com/_/debian/tags
 FROM debian:stable-slim
 
@@ -6,34 +27,31 @@ FROM debian:stable-slim
 LABEL maintainer="Nicholas de Jong <ndejong@threatpatrols.com>"
 LABEL source="https://github.com/threatpatrols/docker-cfwarp-socat"
 
+# copy-install cloudflare-warp package
+COPY --from=cloudflare-warp /tmp/cloudflare-warp/cloudflare-warp.deb /tmp/cloudflare-warp/cloudflare-warp.deb
+
 # install prerequisites and cloudflare-warp
 RUN \
     apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y socat procps curl lsb-release gpg && \
-    apt-get install -y net-tools iputils-ping inetutils-traceroute && \
+    apt-get install -y curl ca-certificates systemd-resolved sudo procps iputils-ping inetutils-traceroute && \
+    apt install -y /tmp/cloudflare-warp/cloudflare-warp.deb && \
+    apt-get install -y socat && \
     \
-    curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list && \
-    apt-get update && \
-    apt-get install -y cloudflare-warp && \
-    \
-    mkdir -p /var/lib/cloudflare-warp/data && \
-    touch /var/lib/cloudflare-warp/data/reg.json && \
-    \
-    mkdir -p /root/.local/share/warp && \
-    echo -n 'yes' > /root/.local/share/warp/accepted-tos.txt && \
-    echo -n 'yes' > /root/.local/share/warp/accepted-teams-tos.txt && \
-    warp-cli --version && \
+    printf " >> %s\n" "$(warp-cli --accept-tos --version)" && \
+    printf " >> %s\n" "$(socat -V | grep 'socat version')" && \
     \
     apt-get clean && \
     apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/*
 
+# NB: perform these COPY/RUN layers after the RUN layer above so edits/changes have short dev-build times
+COPY scripts /scripts
+COPY entrypoint.sh healthchecks.sh ./
+RUN chmod 755 /entrypoint.sh /healthchecks.sh /scripts/*.sh
 
-COPY entrypoint.sh /entrypoint.sh
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 \
+  CMD "/healthchecks.sh"
+
 ENTRYPOINT ["/entrypoint.sh"]
-
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=1 \
-  CMD warp-cli --accept-tos status | grep -qE "Connected" || exit 1
