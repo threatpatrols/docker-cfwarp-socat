@@ -18,13 +18,16 @@ services:
       SOCAT_ARGS_02: "TCP4-LISTEN:2222,reuseaddr,fork TCP4:127.0.0.1:22"
       SOCAT_ARGS_01: "UNIX-LISTEN:/run/docker.sock,reuseaddr,fork TCP4:127.0.0.1:80"
       
-    cap_add:
-      - NET_ADMIN
+    # required for Cloudflare WARP
+    privileged: true
 
     volumes:
       - cloudflarewarp_varlib:/var/lib/cloudflare-warp
 
 ```
+
+### Notes
+- Recent cloudflare warp versions (2024.11.309.0) apper to require use of the `--privileged` flag to open the `tun` interface, would prefer an explicit approach.
 
 ## Source / Repo
 * source: https://github.com/threatpatrols/docker-cfwarp-socat
