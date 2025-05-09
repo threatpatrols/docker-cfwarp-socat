@@ -47,5 +47,6 @@ if [ "$(warp-cli registration show 2>&1 | grep -c -i 'error')" -gt 0 ]; then
 fi
 
 # Show the warp registration detail
+echo
 echo " >> [warp-connect] show the Warp registration details."
 warp-cli registration show || true
